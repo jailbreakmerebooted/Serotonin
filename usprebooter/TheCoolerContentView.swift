@@ -25,20 +25,21 @@ struct CoolerContentView: View {
     @State var showingGradient = false
     @State var blurScreen = false
     @AppStorage("cr") var customReboot = true
-    @State var verboseBoot = false
-    @State var hideText = false
+    @AppStorage("verbose") var verboseBoot = false
     @AppStorage("unthreded") var untether = true
     @AppStorage("hide") var hide = false
     @AppStorage("loadd") var loadLaunch = false
     @AppStorage("showStdout") var showStdout = true
-    @AppStorage("isBeta") var isBeta = false
+    @State var lock = true
     @State var reinstall = false
     @State var resetfs = false
-    let mainBundlePath = Bundle.main.bundlePath + "/trolltoolsroothelper"
+    
     @State var shouldShowLog = true
+
     @AppStorage("headroom") var staticHeadroomMB: Double = 512.0
     @AppStorage("pages") var pUaFPages: Double = 3072.0
     @AppStorage("theme") var theme: Int = 0
+
     public func openConsolePipe() {
         setvbuf(stdout, nil, _IONBF, 0)
         dup2(pipe.fileHandleForWriting.fileDescriptor,
@@ -54,20 +55,6 @@ struct CoolerContentView: View {
                     logItems.append(str)
                 }
             }
-        }
-    }
-    public func updateVerboseHidden() {
-        if (spawnRoot(mainBundlePath, ["checkVerbose", "", ""], nil, nil) == 1) {
-            verboseBoot = true
-        } else {
-            verboseBoot = false
-        }
-    }
-    public func updateHiddenText() {
-        if (spawnRoot(mainBundlePath, ["checkHidden", "", ""], nil, nil) == 1) {
-            hideText = true
-        } else {
-            hideText = false
         }
     }
 
@@ -93,7 +80,7 @@ struct CoolerContentView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     Divider()
                         .padding(.vertical, 8)
-                    Label("Jailbreak", systemImage: "lock.open")
+                    Label("Jailbreak", systemImage: lock ? "lock" : "lock.open")
                         .padding(.leading, 17.5)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -130,59 +117,20 @@ struct CoolerContentView: View {
 //                                Toggle("Load Launch Daemons", systemImage: "restart.circle", isOn: $loadLaunch)
 //                            }
 //                            .disabled(true)
-                            Toggle("Beta iOS",systemImage: "star",isOn: $isBeta)
                             Toggle("Verbose Boot", systemImage: "ladybug", isOn: $verboseBoot)
-                                .onChange(of: verboseBoot) { _ in
+                                .onChange(of: verboseBoot) {_ in
                                     if verboseBoot {
-//                                        if !(FileManager.default.createFile(atPath: "/var/mobile/.serotonin_verbose", contents: nil)) {
-                                        if (spawnRoot(mainBundlePath, ["toggleVerbose", "", ""], nil, nil) != 1) {
+                                        if !(FileManager.default.createFile(atPath: "/var/mobile/.serotonin_verbose", contents: nil)) {
                                             verboseBoot = false
                                         }
                                     } else {
-//                                        do {
-//                                            try FileManager.default.removeItem(atPath: "/var/mobile/.serotonin_verbose")
-//                                        } catch {
-//                                            verboseBoot = true
-//                                        }
-                                        if (spawnRoot(mainBundlePath, ["toggleVerbose", "", ""], nil, nil) != 2) {
+                                        do {
+                                            try FileManager.default.removeItem(atPath: "/var/mobile/.serotonin_verbose")
+                                        } catch {
                                             verboseBoot = true
                                         }
                                     }
                                 }
-
-                            Toggle("Hide confidential text", systemImage: "ladybug", isOn: $hideText)
-//                                .onAppear(perform: {
-//                                    updateHiddenText()
-//                                })
-                                .onChange(of: hideText) { _ in
-                                    if hideText {
-//                                        if !(FileManager.default.createFile(atPath: "/var/mobile/.serotonin_verbose", contents: nil)) {
-                                        if (spawnRoot(mainBundlePath, ["hideText", "", ""], nil, nil) != 1) {
-                                            hideText = false
-                                        }
-                                    } else {
-//                                        do {
-//                                            try FileManager.default.removeItem(atPath: "/var/mobile/.serotonin_verbose")
-//                                        } catch {
-//                                            verboseBoot = true
-//                                        }
-                                        if (spawnRoot(mainBundlePath, ["hideText", "", ""], nil, nil) != 2) {
-                                            verboseBoot = true
-                                        }
-                                    }
-                                }
-
-//                                .onChange(of: verboseBoot) {_ in
-//                                    if verboseBoot {
-//                                        if ((spawnRoot(mainBundlePath, ["toggleVerbose", "", ""], nil, nil)) == -1) {
-//                                            verboseBoot = false
-//                                        }
-//                                    } else {
-//                                        if ((spawnRoot(mainBundlePath, ["toggleVerbose", "", ""], nil, nil)) == 1) {
-//                                            verboseBoot = true
-//                                        }
-//                                    }
-//                                }
 //                            Group {
 //                                Toggle("Enable untether", systemImage: "slash.circle", isOn: $untether)
 //                                Toggle("Hide environment", systemImage: "eye.slash", isOn: $hide)
@@ -321,7 +269,7 @@ struct CoolerContentView: View {
                     
                     VStack(spacing: 15) {
                         VStack(alignment: .leading) {
-                            Text("Serotonin") // apex?????
+                            Text("Fridatonin") // apex?????
                                 .multilineTextAlignment(.leading)
                                 .font(theme != 1 ? .system(.largeTitle, design: .rounded).weight(.bold) : .custom("PaintingWithChocolate", size: 34.0))
                             Text("Semi-jailbreak for iOS 16.0-16.6.1")
@@ -338,25 +286,25 @@ struct CoolerContentView: View {
                                     .blur(radius: 16)
                                     .background(Color(UIColor.secondarySystemGroupedBackground).opacity(0.5))
                                 VStack {
-                                    Toggle("Reinstall jailbreak", isOn: $reinstall)
-//                                        .disabled(true)
+                                    Toggle("Reinstall bootstrap", isOn: $reinstall)
+                                        .disabled(true)
                                         .onChange(of: reinstall) { _ in
                                             if reinstall {
                                                 withAnimation(fancyAnimation) {
                                                     resetfs = false
                                                 }
                                             }
-                                        }.disabled(resetfs);
+                                        }
                                     Divider()
-                                    Toggle("Remove jailbreak", isOn: $resetfs)
-//                                        .disabled(true)
+                                    Toggle("Restore system", isOn: $resetfs)
+                                        .disabled(true)
                                         .onChange(of: resetfs) { _ in
                                             if resetfs {
                                                 withAnimation(fancyAnimation) {
                                                     reinstall = false
                                                 }
                                             }
-                                        }.disabled(reinstall);
+                                        }
                                     Divider()
                                     Button("More Settings", systemImage: "gear") {
                                         UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 200)
@@ -375,7 +323,7 @@ struct CoolerContentView: View {
                         }
 
                         ZStack {
-                            Rectangle()
+                            /*Rectangle()
                                 .fill(.clear)
                                 .blur(radius: 16)
                                 .background(Color(UIColor.secondarySystemGroupedBackground).opacity(0.5))
@@ -397,12 +345,12 @@ struct CoolerContentView: View {
                                 }
                                 .padding(.bottom, 15)
                                 .padding()
-                            }
+                            }*/
                         }
-                        .frame(height: logItems.isEmpty ? 0 : geo.size.height / 2.5, alignment: .leading)
+                        //.frame(height: logItems.isEmpty ? 0 : geo.size.height / 2.5, alignment: .leading)
                         //                    .background(.ultraThinMaterial)
 
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        //.clipShape(RoundedRectangle(cornerRadius: 14))
                         .onChange(of: progress) { p in
                             if p == 1.0 {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
@@ -413,34 +361,18 @@ struct CoolerContentView: View {
                                 }
                             }
                         }
-                        .onAppear(perform: {
-                            updateVerboseHidden()
-                            updateHiddenText()
-                        })
 
                         HStack {
-                            if isRunning {
+                            /*if isRunning {
                                 ProgressView(value: progress)
                                     .tint(progress == 1.0 ? .green : color)
                                 Text(progress == 1.0 ? "Complete" : "\(Int(progress * 100))%")
                                     .font(.caption)
-                            }
+                            }*/
                         }
                         .padding(.top, 10)
 
                         Button(action: {
-                            let argument: String = {
-                                if reinstall {
-                                    return "reinstall"
-                                } else if resetfs {
-                                    return "uninstall"
-                                } else {
-                                    return "install"
-                                }
-                            }()
-                            withAnimation(fancyAnimation) {
-                                shouldShowLog = true
-                            }
                             UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 200)
                             if finished {
 //                                triggerRespring = true // change this when porting this ui to your jailbreak
@@ -448,7 +380,6 @@ struct CoolerContentView: View {
                             } else {
                                 withAnimation(fancyAnimation) {
                                     isRunning = true
-                                    shouldShowLog = true
                                 }
 //                                funnyThing(true) { prog, log in
 //                                    withAnimation(fancyAnimation) {
@@ -457,14 +388,14 @@ struct CoolerContentView: View {
 //                                    }
 //                                }
                                 
-                                withAnimation(fancyAnimation) {
+                                /*withAnimation(fancyAnimation) {
                                     logItems.append("[i] \(UIDevice.current.localizedModel), iOS \(UIDevice.current.systemVersion)")
-                                }
+                                }*/
 
                                 DispatchQueue.global(qos: .default).async {
                                     //                                        logItems.append("[*] Doing kopen")
                                     setProgress(0.1)
-                                    do_kopen(UInt64(pUaFPages), 2, 1, 1)
+                                    do_kopen(UInt64(pUaFPages), 2, 1, 1, Int(staticHeadroomMB), true)
                                     setProgress(0.25)
                                     //                                        logItems.append("[*] Exploit fixup")
                                     setProgress(0.3)
@@ -475,27 +406,22 @@ struct CoolerContentView: View {
                                     
                                     setProgress(0.75)
                                     //                                        logItems.append("[*] All done, kclosing")
-                                    go(isBeta, argument)
+                                    go()
                                     setProgress(0.9)
                                     do_kclose()
                                     logItems.append("[√] All done!")
                                     setProgress(1.0)
+                                    withAnimation(fancyAnimation) {
+                                        lock = false
+                                    }
                                 }
                             }
                         }, label: {
-                            if isRunning {
-                                HStack(spacing: 10) {
-                                    ProgressView()
-                                        .tint(Color(UIColor.secondaryLabel))
-                                        .controlSize(.regular)
-                                    Text("Jelbreking")
-                                }
-                                .frame(width: geo.size.width / 2.5)
-                            } else if finished {
+                            if finished {
                                 Label("Userspace Reboot", systemImage: "arrow.clockwise")
                                     .frame(width: geo.size.width / 1.75)
                             } else {
-                                Label("Jelbrek", systemImage: "lock.open")
+                                Label("Jailbreak", systemImage: lock ? "lock" : "lock.open")
                                     .frame(width: geo.size.width / 1.75)
                             }
                         })
@@ -504,13 +430,6 @@ struct CoolerContentView: View {
                         .tint(finished ? .green : color)
                         .controlSize(.large)
                         .padding(.vertical, 0.1)
-                        if !isRunning && !finished {
-                            Button("Switch to old UI", systemImage: "switch.2") {
-                                withAnimation(fancyAnimation) {
-                                    useNewUI.toggle()
-                                }
-                            }
-                        }
                         Spacer()
                     }
                     .padding()
